@@ -1,0 +1,61 @@
+configuration:
+  solvis_host:
+    name: "SolvisRemote host"
+    description: "Host name or IP address of the SolvisRemote, optionally with port (e.g. 192.168.1.50 or solvis.local:8080)."
+  solvis_user:
+    name: "SolvisRemote user"
+    description: "Login of the SolvisRemote web interface (default solvis)."
+  solvis_password:
+    name: "SolvisRemote password"
+    description: "Password of the SolvisRemote web interface. Stored encrypted in the generated base.xml."
+  unit_id:
+    name: "Unit id"
+    description: "Name of the plant in MQTT topics and entity ids (letters, digits, underscore)."
+  unit_type:
+    name: "Plant type"
+    description: "SolvisMax6, SolvisMax6PurSolo or SolvisMax7."
+  main_heating:
+    name: "Main heating"
+    description: "OelBW (oil condensing), OelNT, Gas, Fern (district heating), WaermeP (heat pump), Extern, Pellet (SolvisLino)."
+  heating_circuits:
+    name: "Heating circuits"
+    description: "Number of heating circuits (1 to 3)."
+  extensions:
+    name: "Extensions"
+    description: "Plant extensions: OhneRaumfuehler_HK1..3 (heating circuit without room sensor), Festbrennstoff, SolarOstWest, Zaehlfunktion2Screens."
+  remote_firmware_old:
+    name: "Old SolvisRemote firmware"
+    description: "Enable if the SolvisRemote firmware is older than 1714SP4110-2_21_02A."
+  gui_access:
+    name: "Write access via the touch screen"
+    description: "Allows the server to change set points and modes through the SolvisRemote web interface. Off: read only."
+  clock_tuning:
+    name: "Adjust the Solvis clock"
+    description: "Sets the clock of the SolvisControl to the system time of Home Assistant."
+  admin:
+    name: "Installer menu (Admin)"
+    description: "Reads the installer settings and enables the installer mode and the burner lock. Only if you know what you are doing."
+  mqtt_host:
+    name: "MQTT host (optional)"
+    description: "Leave empty to use the Mosquitto broker app automatically."
+  mqtt_port:
+    name: "MQTT port (optional)"
+    description: "Default 1883."
+  mqtt_user:
+    name: "MQTT user (optional)"
+    description: "Only with an own broker."
+  mqtt_password:
+    name: "MQTT password (optional)"
+    description: "Only with an own broker."
+  topic_prefix:
+    name: "Topic prefix"
+    description: "First element of all MQTT topics and of the MQTT client id (letters and digits)."
+  discovery_prefix:
+    name: "Discovery prefix"
+    description: "Discovery prefix of the MQTT integration (default homeassistant)."
+  time_zone:
+    name: "Time zone (optional)"
+    description: "Defaults to the time zone of Home Assistant."
+  java_heap_mb:
+    name: "Java heap (MB)"
+    description: "Memory for the server; learning needs about 300 MB."

@@ -1,0 +1,106 @@
+name: build
+
+# Builds the solvis2mqtt app image for amd64 and aarch64 on every change (without
+# pushing) and publishes it on a GitHub release whose tag matches the version in
+# solvis2mqtt/config.yaml (v1.0.0 <-> 1.0.0). Uses the Home Assistant builder
+# actions (BuildKit), pinned to release 2026.09.0.
+
+on:
+  push:
+    branches: [main]
+    paths: ['solvis2mqtt/**', '.github/workflows/build.yml']
+  pull_request:
+    paths: ['solvis2mqtt/**', '.github/workflows/build.yml']
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  ARCHITECTURES: '["amd64", "aarch64"]'
+  IMAGE_NAME: hassio-addon-solvis2mqtt
+
+permissions:
+  contents: read
+
+jobs:
+  init:
+    name: prepare
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      version: ${{ steps.version.outputs.version }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Version from config.yaml
+        id: version
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          VERSION=$(sed -n 's/^version: *"\{0,1\}\([^"]*\)"\{0,1\} *$/\1/p' solvis2mqtt/config.yaml)
+          test -n "$VERSION" || { echo "::error::no version in solvis2mqtt/config.yaml"; exit 1; }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT" = release ]; then
+            TAG="${GITHUB_REF_NAME#v}"
+            if [ "$TAG" != "$VERSION" ]; then
+              echo "::error::release tag $GITHUB_REF_NAME does not match config.yaml version $VERSION"
+              exit 1
+            fi
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version $VERSION, publish: $( [ "$EVENT" = release ] && echo yes || echo no )"
+
+      - id: matrix
+        uses: home-assistant/builder/actions/prepare-multi-arch-matrix@7412f0023ea9b6e58e8bb5059f1660f51376f49a # 2026.09.0
+        with:
+          architectures: ${{ env.ARCHITECTURES }}
+          image-name: ${{ env.IMAGE_NAME }}
+
+  build:
+    name: build ${{ matrix.arch }}
+    needs: init
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: home-assistant/builder/actions/build-image@7412f0023ea9b6e58e8bb5059f1660f51376f49a # 2026.09.0
+        with:
+          arch: ${{ matrix.arch }}
+          context: solvis2mqtt
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          image: ${{ matrix.image }}
+          image-tags: |
+            ${{ needs.init.outputs.version }}
+            latest
+          push: ${{ needs.init.outputs.publish }}
+          skip-existing: ${{ needs.init.outputs.version }}
+          version: ${{ needs.init.outputs.version }}
+
+  manifest:
+    name: manifest
+    if: needs.init.outputs.publish == 'true'
+    needs: [init, build]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      packages: write
+    steps:
+      - uses: home-assistant/builder/actions/publish-multi-arch-manifest@7412f0023ea9b6e58e8bb5059f1660f51376f49a # 2026.09.0
+        with:
+          architectures: ${{ env.ARCHITECTURES }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          image-name: ${{ env.IMAGE_NAME }}
+          image-tags: |
+            ${{ needs.init.outputs.version }}
+            latest
+          skip-existing: ${{ needs.init.outputs.version }}
