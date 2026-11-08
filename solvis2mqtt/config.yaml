@@ -1,5 +1,5 @@
 name: solvis2mqtt
-version: "1.0.0"
+version: "1.0.1"
 slug: solvis2mqtt
 description: "Solvis-Heizungsanlagen (SolvisControl 2 mit SolvisRemote) per MQTT in Home Assistant"
 url: https://github.com/lufi42/hassio-addons/tree/main/solvis2mqtt
@@ -21,9 +21,7 @@ map:
   - type: app_config
     read_only: false
 options:
-  solvis_host: ""
   solvis_user: "solvis"
-  solvis_password: ""
   unit_id: "SolvisMax"
   unit_type: "SolvisMax6"
   main_heating: "OelBW"
@@ -37,9 +35,10 @@ options:
   discovery_prefix: "homeassistant"
   java_heap_mb: 384
 schema:
-  solvis_host: "match(^[A-Za-z0-9.-]+(:[0-9]+)?$)"
-  solvis_user: str
-  solvis_password: password
+  # Host, user and password are checked by run.sh; they may stay empty with an own base.xml.
+  solvis_host: "match(^[A-Za-z0-9.-]+(:[0-9]+)?$)?"
+  solvis_user: "str?"
+  solvis_password: "password?"
   unit_id: "match(^[A-Za-z0-9_]+$)"
   unit_type: "list(SolvisMax6|SolvisMax6PurSolo|SolvisMax7)"
   main_heating: "list(OelBW|OelNT|Gas|Fern|WaermeP|Extern|Pellet)"

@@ -5,6 +5,7 @@
 # - /config/base.xml        optional: own base.xml, used instead of the generated one
 #                           (must have writablePathLinux="/data")
 # - /config/ha-labels.properties, ha-groups.properties, tinylog.properties
+# - /config/measurements.xml, graficData.xml, LearnedImages/: moved once into /data/SolvisServerData
 #                           optional overrides, copied into /data/SolvisServerData
 # - /data/SolvisServerData  learned images, backups, logs (persistent, in HA backups)
 #
@@ -43,6 +44,21 @@ for f in ha-labels.properties ha-groups.properties tinylog.properties; do
 	if [ -f "$CONFIG/$f" ]; then
 		cp "$CONFIG/$f" "$SERVER_DATA/$f"
 		log "using $f from $CONFIG"
+	fi
+done
+
+# --- one-time import of server data from the app config directory (migration) ---------
+# measurements.xml (counter values; without it X01/X02/X10 start at 0 and Home Assistant books a
+# counter reset), graficData.xml and LearnedImages/ (skip the learning). Moved into
+# /data/SolvisServerData the first time they are found; an existing file there is kept.
+for f in measurements.xml graficData.xml LearnedImages; do
+	if [ -e "$CONFIG/$f" ]; then
+		if [ -e "$SERVER_DATA/$f" ]; then
+			log "import of $f skipped: already present in $SERVER_DATA (delete it there to replace it)"
+		else
+			cp -r "$CONFIG/$f" "$SERVER_DATA/$f" && rm -rf "$CONFIG/$f"
+			log "imported $f from $CONFIG into $SERVER_DATA"
+		fi
 	fi
 done
 

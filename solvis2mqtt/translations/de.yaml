@@ -1,13 +1,13 @@
 configuration:
   solvis_host:
     name: "SolvisRemote-Host"
-    description: "Hostname oder IP-Adresse der SolvisRemote, optional mit Port (z. B. 192.168.1.50 oder solvis.local:8080)."
+    description: "Hostname oder IP-Adresse der SolvisRemote, optional mit Port (z. B. 192.168.1.50 oder solvis.local:8080). Leer lassen, wenn eine eigene base.xml verwendet wird."
   solvis_user:
     name: "SolvisRemote-Benutzer"
     description: "Anmeldung an der Web-Oberfläche der SolvisRemote (Standard solvis)."
   solvis_password:
     name: "SolvisRemote-Passwort"
-    description: "Passwort der Web-Oberfläche der SolvisRemote. Steht verschlüsselt in der erzeugten base.xml."
+    description: "Passwort der Web-Oberfläche der SolvisRemote. Steht verschlüsselt in der erzeugten base.xml. Leer lassen, wenn eine eigene base.xml verwendet wird."
   unit_id:
     name: "Unit-Id"
     description: "Name der Anlage in MQTT-Topics und Entity-Ids (Buchstaben, Ziffern, Unterstrich)."

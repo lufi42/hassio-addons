@@ -54,18 +54,22 @@ Option | Bedeutung
 `java_heap_mb` | Speicher für den Server (Standard 384 MB, das Learning braucht etwa 300 MB).
 
 Die übrigen Einstellungen der `base.xml` (Messintervalle, Features wie `UpdateAfterUserAccess`, Kanaloptionen)
-setzt die App auf bewährte Werte. Wer mehr braucht, verwendet eine eigene `base.xml` (nächster Abschnitt).
+setzt die App auf bewährte Werte. Wer mehr braucht, verwendet eine eigene `base.xml` (nächster Abschnitt); dann
+dürfen `solvis_host`, `solvis_user` und `solvis_password` leer bleiben.
 
 ## Eigene base.xml und Overrides
 
-Im Konfigurationsverzeichnis der App (Freigabe `addon_configs`, Ordner `…_solvis2mqtt`, erreichbar z. B. mit der
-App Samba share oder dem File editor) werden beim Start folgende Dateien berücksichtigt:
+Im Konfigurationsverzeichnis der App (Freigabe `addon_configs`, Ordner `<repo-id>_solvis2mqtt`) werden beim Start
+folgende Dateien berücksichtigt. Erreichbar ist der Ordner mit der App **Samba share**, dem **File editor** oder
+**Advanced SSH & Web Terminal**; die App „Terminal & SSH“ bindet `addon_configs` nicht ein. Auf dem HAOS-Host liegt
+er unter `/mnt/data/supervisor/app_configs/<repo-id>_solvis2mqtt/`.
 
 Datei | Wirkung
 --- | ---
 `base.xml` | Ersetzt die aus den Optionen erzeugte `base.xml` vollständig. Die Optionen zu Anlage und MQTT werden dann ignoriert. Pflicht: `writablePathLinux="/data"`. Passwörter verschlüsselt eintragen (siehe unten).
 `ha-labels.properties`, `ha-groups.properties` | Eigene Namen und Geräte-Zuordnung für Home Assistant, Format wie im Server-Repo.
 `tinylog.properties` | Eigene Log-Konfiguration.
+`measurements.xml`, `graficData.xml`, `LearnedImages/` | Werden einmalig nach `/data/SolvisServerData` verschoben (Umzug, nächster Abschnitt). Vorhandene Dateien dort bleiben erhalten.
 
 Passwörter für eine eigene `base.xml` verschlüsselt die App im Terminal (App „Terminal & SSH“ oder „Advanced SSH“):
 
@@ -74,7 +78,30 @@ docker exec -it addon_<id>_solvis2mqtt java -jar /app/solvis2mqtt.jar --string-t
 ```
 
 Das Datenverzeichnis `/data/SolvisServerData` (gelernte Bilder, Backups, Logs, Rückstellungsdateien) ist Teil der
-Home-Assistant-Backups. Die erzeugte `base.xml` wird bei jedem Start neu geschrieben.
+Home-Assistant-Backups und liegt auf dem HAOS-Host unter `/mnt/data/supervisor/apps/data/<repo-id>_solvis2mqtt/`
+(nicht `apps/<repo-id>_solvis2mqtt/`). Die erzeugte `base.xml` wird bei jedem Start neu geschrieben.
+
+## Umzug von einer bestehenden Installation
+
+Läuft solvis2mqtt bereits als Container oder LXC, lassen sich Konfiguration und Zählerstände übernehmen, so dass
+Home Assistant dieselben Entities weiterführt und die Langzeitstatistik stimmt.
+
+1. App installieren, aber **noch nicht starten**.
+2. Aus dem Datenverzeichnis der alten Installation ins Konfigurationsverzeichnis der App kopieren:
+   * `base.xml`, unverändert bis auf `writablePathLinux="/data"`. Damit bleiben `unit_id`, `topic_prefix`
+     (`idPrefix`/`topicPrefix` im Element `Mqtt`) und die verschlüsselten Passwörter gleich; die `unique_id`s der
+     Entities sind `<topic_prefix>_<unit_id>_<Kanal>`, Home Assistant ordnet alles ohne neue Entities zu.
+   * `SolvisServerData/measurements.xml`: **wichtig**, sonst starten die berechneten Zähler (Brennerstarts
+     `X01`, Laufzeiten `X02`, `X10`) bei 0. Sie werden zwar nach wenigen Minuten mit der SolvisControl abgeglichen,
+     Home Assistant bucht den Sprung aber als Zählerreset in der Langzeitstatistik (`total_increasing`).
+   * optional `SolvisServerData/graficData.xml` und `SolvisServerData/LearnedImages/`: erspart das Learning.
+   * vorhandene `ha-labels.properties`, `ha-groups.properties`, `ha-values.properties`.
+3. Den alten Server sauber stoppen (keine Schreibbefehle offen, z. B. `gui_status` = `CONTROL_FINISHED`). Er
+   schreibt dabei `measurements.xml` ein letztes Mal; diese Fassung übernehmen.
+4. App starten. Das Log zeigt `imported measurements.xml from /config …` und `using base.xml from /config`.
+
+Zurück zur alten Installation: App stoppen, `measurements.xml` aus dem Datenverzeichnis der App zurückkopieren,
+alten Server starten.
 
 ## Log
 
